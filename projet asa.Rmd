@@ -124,3 +124,69 @@ chart.Correlation(dmil_selected,histogram=TRUE, pch=19)#usefull if few variables
 ```
 
 
+
+
+
+# Test de Mantel pour l'autocorrélation spatiale 
+
+Dans cette partie, nous allons effectuer un test de Mantel pour évaluer la corrélation entre deux matrices de distance : la matrice spatiale et la matrice des caractéristiques du milieu.
+
+Le test de Mantel est utilisé pour détecter une éventuelle autocorrélation spatiale dans les données multivariées, en considérant à la fois la distance géographique et la distance entre les caractéristiques du milieu.
+
+## Matrice géographique
+
+Pour commencer, nous importons les données spatiales à partir du fichier `coord` et calculons la matrice de distance géographique en utilisant la distance euclidienne.
+
+```{r}
+# Importation des données spatiales
+dcoord <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
+                                     sheet = "coord")
+
+# Calcul de la matrice de distance spatiale
+spatial <- dist(dcoord) # Matrice spatiale
+
+```
+
+
+
+## Matrice du milieu
+Ensuite, nous importons les données du milieu à partir du fichier `mil.txt` et préparons la matrice de distance en supprimant les colonnes corrélés (Argile, Na100g et Na+). Nous standardisons également les données en les divisant par l'écart-type.
+
+```{r}
+# Importation des données du milieu
+dmil <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
+
+                                     sheet = "mil")
+
+# Suppression des colonnes (Argile, Na100g et Na+)
+milieu <- dmil[, -c(1, 6, 10)]
+
+# Calcul de la matrice de distance du milieu (standardisée)
+milieu <- dist(scale(milieu), method = "euclidean") # Matrice du milieu
+
+```
+
+
+
+## Test de Mantel
+Nous effectuons maintenant le test de Mantel pour évaluer la corrélation entre les deux matrices.
+
+
+```{r}
+# Test de Mantel
+library(ade4)
+R <- mantel.randtest(spatial, milieu, nrepet = 1000)
+
+# Affichage des résultats
+R # p-value: 0.03896104, Observation: 0.07646109 
+plot(R, main = "Test de Mantel")
+
+```
+
+Les résultats du test de Mantel montrent une corrélation positive faible entre les deux matrices de distance.
+
+## Conclusion
+
+En conclusion, il existe une similitude entre les variables caractérisant le site de l'étude, expliquée par leur proximité géographique.
+
+
