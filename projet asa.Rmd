@@ -1,0 +1,126 @@
+---
+title: "Asa projet"
+output: html_document
+date: "2023-10-05"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+```{r pressure, echo=FALSE}
+library(readxl)
+library(tidyverse)
+library(ade4)
+library(vegan)
+library("ggplot2")
+library("factoextra")
+library(corrplot)
+library(RVAideMemoire)
+library("PerformanceAnalytics")
+
+dflo <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls",  
+                                     sheet = "flo")
+
+
+dmil <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
+
+                                     sheet = "mil")
+
+dcoord <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
+                                     sheet = "coord")
+
+
+dasso <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", 
+                                     sheet = "association")
+```
+
+
+```{r pressure, echo=FALSE}
+## DATA DESCRIPTION AND OBJECTIVES
+
+# releve fleuristique
+
+str(dflo)
+summary(dflo)
+colSums(is.na(dflo))
+rowSums(is.na(dflo))
+
+
+dflo2 = dflo!=0 #nombre de présence 
+
+par(mfrow=c(2,2))
+hist(colSums(dflo),col='blue')
+hist(rowSums(dflo),col='blue')
+hist(colSums(dflo2),col='blue')
+hist(rowSums(dflo2),col='blue')
+```
+
+
+```{r pressure, echo=FALSE}
+#dflo <- decostand(doubs$dflo[-8,], "hellinger")
+
+## DATA EXPLORATION
+
+# infos sur les milieux
+
+
+str(dmil)
+summary(dmil)
+colSums(is.na(dmil))
+rowSums(is.na(dmil))
+# There is no missing value.
+
+par(mfrow=c(2,4))
+dotchart(dmil$Argile,pch=16,col='blue',xlab='Argile')
+dotchart(dmil$Limon, pch=16,col='blue',xlab='Limon')
+dotchart(dmil$K2O,pch=16,col='blue',xlab='K2O')
+dotchart(dmil$`Mg++`,pch=16,col='blue',xlab='Mg++')
+dotchart(dmil$`Na+/100g`,pch=16,col='blue',xlab='Na+/100g')
+dotchart(dmil$`K+`, pch=16,col='blue',xlab='K+')
+dotchart(dmil$Conduc,pch=16,col='blue',xlab='Conduc')
+dotchart(dmil$Capa_Reten , pch=16,col='blue',xlab='Capa_Reten')
+
+
+par(mfrow=c(2,4))
+hist(dmil$Argile,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$Limon, pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$K2O,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$`Mg++`,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$`Na+/100g`,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$`K+`, pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$Conduc,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dmil$Capa_Reten , pch=16,col='blue',xlab='CO2 Exchange')
+```
+
+
+```{r pressure, echo=FALSE}
+par(mfrow=c(1,1))
+M <- cor(dmil)
+corrplot(M, method = "number")
+
+chart.Correlation(dmil,histogram=TRUE, pch=19)#usefull if few variables
+
+str(dcoord)
+plot(dcoord)
+```
+
+
+```{r pressure, echo=FALSE}
+dmil_selected = dmil %>% 
+  dplyr::select(-c("Argile", "Na+/100g", "Na+/l"))
+
+chart.Correlation(dmil_selected,histogram=TRUE, pch=19)#usefull if few variables
+```
+
+
+```{r pressure, echo=FALSE}
+
+
+
+```
+
+
