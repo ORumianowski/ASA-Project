@@ -14,106 +14,102 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r pressure, echo=FALSE}
 library(readxl)
 library(tidyverse)
-library(ade4)
 library(vegan)
 library("ggplot2")
-library("factoextra")
+#library("factoextra")
 library(corrplot)
-library(RVAideMemoire)
-library("PerformanceAnalytics")
+#library("PerformanceAnalytics")
 
-dflo <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls",  
-                                     sheet = "flo")
+filePathLouis = "C:/git/ASA-Project/data_vegetation_french.xls"
+# filePath = "C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls"
+dataFlower <- read_xls(filePathLouis, sheet = "flo")
 
+dataEnvironment <- read_xls(filePathLouis, col_types = "numeric", sheet = "mil")
 
-dmil <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
+colnames(dataEnvironment) <- c("Argile","Limon","Sable","K2O","Mg", "Na_100g","K", "Conduc","Capa_Reten","Na_Liter","Altitude"  )
 
-                                     sheet = "mil")
+dataCoord <- read_xls(filePathLouis, col_types = "numeric", sheet = "coord")
 
-dcoord <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
-                                     sheet = "coord")
-
-
-dasso <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", 
-                                     sheet = "association")
+dasso <- read_xls(filePathLouis, sheet = "association")
 ```
 
+I. EXPLORATION DES DONNES
 
 ```{r pressure, echo=FALSE}
 ## DATA DESCRIPTION AND OBJECTIVES
 
 # releve fleuristique
 
-str(dflo)
-summary(dflo)
-colSums(is.na(dflo))
-rowSums(is.na(dflo))
+str(dataFlower)
+summary(dataFlower)
+colSums(is.na(dataFlower))
+rowSums(is.na(dataFlower))
 
 
-dflo2 = dflo!=0 #nombre de présence 
+dataFlower2 = dataFlower!=0 #nombre de présence 
 
 par(mfrow=c(2,2))
-hist(colSums(dflo),col='blue')
-hist(rowSums(dflo),col='blue')
-hist(colSums(dflo2),col='blue')
-hist(rowSums(dflo2),col='blue')
+hist(colSums(dataFlower),col='blue')
+hist(rowSums(dataFlower),col='blue')
+hist(colSums(dataFlower2),col='blue')
+hist(rowSums(dataFlower2),col='blue')
 ```
 
 
 ```{r pressure, echo=FALSE}
-#dflo <- decostand(doubs$dflo[-8,], "hellinger")
+#dataFlower <- decostand(doubs$dataFlower[-8,], "hellinger")
 
 ## DATA EXPLORATION
 
 # infos sur les milieux
 
 
-str(dmil)
-summary(dmil)
-colSums(is.na(dmil))
-rowSums(is.na(dmil))
+str(dataEnvironment)
+summary(dataEnvironment)
+colSums(is.na(dataEnvironment))
+rowSums(is.na(dataEnvironment))
 # There is no missing value.
 
 par(mfrow=c(2,4))
-dotchart(dmil$Argile,pch=16,col='blue',xlab='Argile')
-dotchart(dmil$Limon, pch=16,col='blue',xlab='Limon')
-dotchart(dmil$K2O,pch=16,col='blue',xlab='K2O')
-dotchart(dmil$`Mg++`,pch=16,col='blue',xlab='Mg++')
-dotchart(dmil$`Na+/100g`,pch=16,col='blue',xlab='Na+/100g')
-dotchart(dmil$`K+`, pch=16,col='blue',xlab='K+')
-dotchart(dmil$Conduc,pch=16,col='blue',xlab='Conduc')
-dotchart(dmil$Capa_Reten , pch=16,col='blue',xlab='Capa_Reten')
+dotchart(dataEnvironment$Argile,pch=16,col='blue',xlab='Argile')
+dotchart(dataEnvironment$Limon, pch=16,col='blue',xlab='Limon')
+dotchart(dataEnvironment$K2O,pch=16,col='blue',xlab='K2O')
+dotchart(dataEnvironment$Mg,pch=16,col='blue',xlab='Mg++')
+dotchart(dataEnvironment$Na_100g,pch=16,col='blue',xlab='Na+/100g')
+dotchart(dataEnvironment$K, pch=16,col='blue',xlab='K+')
+dotchart(dataEnvironment$Conduc,pch=16,col='blue',xlab='Conduc')
+dotchart(dataEnvironment$Capa_Reten , pch=16,col='blue',xlab='Capa_Reten')
 
+# sable, na_liter et altitude ?
 
 par(mfrow=c(2,4))
-hist(dmil$Argile,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$Limon, pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$K2O,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$`Mg++`,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$`Na+/100g`,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$`K+`, pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$Conduc,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dmil$Capa_Reten , pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Argile,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Limon, pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$K2O,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Mg,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Na_100g,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$K, pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Conduc,pch=16,col='blue',xlab='CO2 Exchange')
+hist(dataEnvironment$Capa_Reten , pch=16,col='blue',xlab='CO2 Exchange')
 ```
 
 
 ```{r pressure, echo=FALSE}
 par(mfrow=c(1,1))
-M <- cor(dmil)
+M <- cor(dataEnvironment)
 corrplot(M, method = "number")
 
-chart.Correlation(dmil,histogram=TRUE, pch=19)#usefull if few variables
+chart.Correlation(dataEnvironment,histogram=TRUE, pch=19)#usefull if few variables
 
-str(dcoord)
-plot(dcoord)
+str(dataCoord)
+plot(dataCoord)
 ```
 
 
 ```{r pressure, echo=FALSE}
-dmil_selected = dmil %>% 
-  dplyr::select(-c("Argile", "Na+/100g", "Na+/l"))
+dataEnvironment_selected = subset(dataEnvironment, select = -c(Argile, Na_100g, Na_Liter))
+chart.Correlation(dataEnvironment_selected,histogram=TRUE, pch=19)#usefull if few variables
 
-chart.Correlation(dmil_selected,histogram=TRUE, pch=19)#usefull if few variables
 ```
 
 
@@ -125,7 +121,7 @@ chart.Correlation(dmil_selected,histogram=TRUE, pch=19)#usefull if few variables
 
 
 
-
+II. RECHERCHE D'UNE AUTOCORRELATION SPATIALE
 
 # Test de Mantel pour l'autocorrélation spatiale 
 
@@ -138,31 +134,19 @@ Le test de Mantel est utilisé pour détecter une éventuelle autocorrélation s
 Pour commencer, nous importons les données spatiales à partir du fichier `coord` et calculons la matrice de distance géographique en utilisant la distance euclidienne.
 
 ```{r}
-# Importation des données spatiales
-dcoord <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
-                                     sheet = "coord")
-
 # Calcul de la matrice de distance spatiale
-spatial <- dist(dcoord) # Matrice spatiale
+spatial <- dist(dataCoord) # Matrice spatiale
 
 ```
 
 
 
 ## Matrice du milieu
-Ensuite, nous importons les données du milieu à partir du fichier `mil.txt` et préparons la matrice de distance en supprimant les colonnes corrélés (Argile, Na100g et Na+). Nous standardisons également les données en les divisant par l'écart-type.
+Ensuite, nous importons les données sur l'environnement à partir du fichier `mil.txt` et préparons la matrice de distance en supprimant les colonnes corrélés (Argile, Na100g et Na+). Nous standardisons également les données en les divisant par l'écart-type.
 
 ```{r}
-# Importation des données du milieu
-dmil <- read_excel("C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls", col_types = "numeric",
-
-                                     sheet = "mil")
-
-# Suppression des colonnes (Argile, Na100g et Na+)
-milieu <- dmil[, -c(1, 6, 10)]
-
 # Calcul de la matrice de distance du milieu (standardisée)
-milieu <- dist(scale(milieu), method = "euclidean") # Matrice du milieu
+dataEnvironment_selected <- dist(scale(dataEnvironment_selected), method = "euclidean") # Matrice du milieu
 
 ```
 
@@ -170,12 +154,10 @@ milieu <- dist(scale(milieu), method = "euclidean") # Matrice du milieu
 
 ## Test de Mantel
 Nous effectuons maintenant le test de Mantel pour évaluer la corrélation entre les deux matrices.
-
-
 ```{r}
 # Test de Mantel
 library(ade4)
-R <- mantel.randtest(spatial, milieu, nrepet = 1000)
+R <- mantel.randtest(spatial, dataEnvironment_selected, nrepet = 1000)
 
 # Affichage des résultats
 R # p-value: 0.03896104, Observation: 0.07646109 
@@ -188,5 +170,109 @@ Les résultats du test de Mantel montrent une corrélation positive faible entre
 ## Conclusion
 
 En conclusion, il existe une similitude entre les variables caractérisant le site de l'étude, expliquée par leur proximité géographique.
+
+Une autre manière de regarder l'autocorrelation spatiale est de faire un partitionnement de variance :
+```{r}
+m = varpart(dataFlower,dataEnvironment,dataCoord)
+m
+plot(m, bg=2:5)
+```
+
+## III. DETERMINATION DES VARIABLES STRUCTURANT LES COMMUNAUTES AVEC UNE PCCA
+# 1. Standardisation 
+Pourquoi faut il standardiser ?? et scale les données env ??
+
+Certaines espèces sont très fréquentes sur certains sites (lorsque les conditions sont favorables), ou absentes de nombreux sites. Cette asymétrie peut introduire des problèmes parasites dans nos analyses. Ainsi nous allons transformer nos données de composition pour les analyser de manière appropriée.
+La transformation de Hellinger permet de réduire les effets des valeurs extrêmement grandes.
+
+On ramene aussi les donnes environnementales sur la meme echelle, car elles ont chacune des unites de mesures et des valeurs tres differentes. Il s'agit donc de les centrer-reduire afin de rendre plus comparable leur effet. Cela permet aussi d'etre plus proche de l'hypothese de normalite multivariee (une des hypothese en analyse canonique), et donc d'obtenir des resultat plus fiable.
+```{r}
+dataFlower_standardized <- decostand(dataFlower, "hellinger")
+dataEnvironment_selected = scale(dataEnvironment_selected)
+```
+
+# 2. Selection des variables pertinententes avec ordistep
+
+ordistep permet de selectionner les variables a conserver dans le modele en se basant sur des tests de permutations. Les variables qui ne permettent pas une amelioration significative du modele sont ainsi retires.
+
+Dans le code ci-dessous, on construit tout d'abord la formule que le modele devra utiliser afin de specifier que les donnees spatiales doivent etre pris en compte dans le modele afin de retirer la part de variance explique par les variables environnementales qui serait liee a de l'autocorrelation spatiale.
+```{r}
+dataEnvironmentAndCoord = cbind(dataEnvironment_selected, dataCoord)
+
+formule_pcca <- formula(paste("dataFlower ~",                              paste(names(dataEnvironmentAndCoord)[1:(length(dataEnvironmentAndCoord)-(length(dataCoord)))], collapse = " + "), "+ Condition (", paste(names(dataEnvironmentAndCoord)[(length(dataEnvironmentAndCoord)-(length(dataCoord)-1)):length(dataEnvironmentAndCoord)], collapse ="+"),")"))
+
+print(formule_pcca)
+
+pccaModel <- cca(formule_pcca, dataEnvironmentAndCoord)
+
+ordistep(pccaModel,perm.max=500)
+```
+3. Construction du modele finale
+Finalement, apres selection de variable il nous reste 6 variables environnementales : Sable, Mg, K, Conduc, Capa_Reten et Altitude. Le modele finale est donc le suivant :
+```{r}
+formulePcca_finale = formula("dataFlower ~ Sable + Mg + K + Conduc + Capa_Reten + Altitude +
+Condition(x + y)")
+pccaModel_finale <- cca(formulePcca_finale, dataEnvironmentAndCoord)
+```
+
+4. Significativite du modele
+
+vif
+```{r}
+vif.cca(pccaModel_finale) 
+```
+
+summary, anova pour tester la signicativité
+```{r}
+pccaModel_finale
+RsquareAdj(pccaModel_finale)
+summary(pccaModel_finale)
+
+#test the pCCA:
+anova.cca(pccaModel_finale)
+# Species scores :
+pccaModel_finale$CCA$v
+
+```
+
+5. Variables significatives dans le modele
+```{r}
+anova(pccaModel_finale, by="terms", perms.max=1000)
+```
+```{r}
+pccaModel_finale$CCA$biplot
+```
+
+6. Representation des resultats
+```{r}
+plot(pccaModel_finale,scaling=1) # scaling for sites
+plot(pccaModel_finale,scaling=2) # scaling for species
+
+plot(pccaModel_finale, type="n", scaling =3)
+text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
+text(pccaModel_finale, "species", col="blue", cex=0.8)
+```
+
+```{r}
+scl <- 2 
+colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
+Use = as.factor(unique(dasso$association))
+dataEnvironmentAndCoord$association <- as.factor(dasso$association)
+head(with(dataEnvironmentAndCoord, colvec[Use]))
+
+plot(pccaModel_finale, type = "n", scaling = scl)
+text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
+with(dataEnvironmentAndCoord, points(pccaModel_finale, display = "sites", col = colvec[Use],
+                      scaling = scl, pch = 21, bg = colvec[Use]))
+#text(pccaModel_finale, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+with(dataEnvironmentAndCoord, legend("topright", legend = levels(Use), bty = "n",
+                      col = colvec, pch = 21, pt.bg = colvec))
+```
+
+
+
+
+
+
 
 
