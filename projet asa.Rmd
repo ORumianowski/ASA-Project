@@ -8,44 +8,58 @@ date: "2023-10-05"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-
-
-
-```{r pressure, echo=FALSE}
+0. CHargement des packages necessaires et des donnees
+```{r, echo=FALSE}
 library(readxl)
-library(tidyverse)
 library(vegan)
+library(dplyr)
 library("ggplot2")
-#library("factoextra")
 library(corrplot)
-#library("PerformanceAnalytics")
+library(PerformanceAnalytics) 
 
 filePathLouis = "C:/git/ASA-Project/data_vegetation_french.xls"
-# filePath = "C:/Users/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls"
+# filePath = "C:/associationrs/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls"
 dataFlower <- read_xls(filePathLouis, sheet = "flo")
 
-dataEnvironment <- read_xls(filePathLouis, col_types = "numeric", sheet = "mil")
+dataEnvironment <- read_xls(filePathLouis, sheet = "mil") %>%
+  lapply(as.numeric) %>%
+  as.data.frame()
 
 colnames(dataEnvironment) <- c("Argile","Limon","Sable","K2O","Mg", "Na_100g","K", "Conduc","Capa_Reten","Na_Liter","Altitude"  )
 
 dataCoord <- read_xls(filePathLouis, col_types = "numeric", sheet = "coord")
 
 dasso <- read_xls(filePathLouis, sheet = "association")
+
+head(dataFlower)
+head(dataCoord)
+head(dataEnvironment)
+head(dasso)
 ```
 
-I. EXPLORATION DES DONNES
+## I. EXPLORATION DES DONNES
+# 1. Exploration des donnees florales
 
-```{r pressure, echo=FALSE}
+```{r, echo=FALSE}
 ## DATA DESCRIPTION AND OBJECTIVES
 
 # releve fleuristique
 
 str(dataFlower)
 summary(dataFlower)
+```
+
+On verifie qu'il n'y a pas de donnees manquantes
+```{r}
 colSums(is.na(dataFlower))
 rowSums(is.na(dataFlower))
+```
+On verifie aussi que toutes les stations contiennent des fleurs
+```{r}
+rowSums(dataFlower)
+```
 
-
+```{r}
 dataFlower2 = dataFlower!=0 #nombre de présence 
 
 par(mfrow=c(2,2))
@@ -55,73 +69,50 @@ hist(colSums(dataFlower2),col='blue')
 hist(rowSums(dataFlower2),col='blue')
 ```
 
-
-```{r pressure, echo=FALSE}
-#dataFlower <- decostand(doubs$dataFlower[-8,], "hellinger")
-
-## DATA EXPLORATION
-
-# infos sur les milieux
-
-
+# 2. Exploration des donnees environnementales
+```{r, echo=FALSE}
 str(dataEnvironment)
 summary(dataEnvironment)
 colSums(is.na(dataEnvironment))
 rowSums(is.na(dataEnvironment))
 # There is no missing value.
-
-par(mfrow=c(2,4))
-dotchart(dataEnvironment$Argile,pch=16,col='blue',xlab='Argile')
-dotchart(dataEnvironment$Limon, pch=16,col='blue',xlab='Limon')
-dotchart(dataEnvironment$K2O,pch=16,col='blue',xlab='K2O')
-dotchart(dataEnvironment$Mg,pch=16,col='blue',xlab='Mg++')
-dotchart(dataEnvironment$Na_100g,pch=16,col='blue',xlab='Na+/100g')
-dotchart(dataEnvironment$K, pch=16,col='blue',xlab='K+')
-dotchart(dataEnvironment$Conduc,pch=16,col='blue',xlab='Conduc')
-dotchart(dataEnvironment$Capa_Reten , pch=16,col='blue',xlab='Capa_Reten')
-
-# sable, na_liter et altitude ?
-
-par(mfrow=c(2,4))
-hist(dataEnvironment$Argile,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$Limon, pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$K2O,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$Mg,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$Na_100g,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$K, pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$Conduc,pch=16,col='blue',xlab='CO2 Exchange')
-hist(dataEnvironment$Capa_Reten , pch=16,col='blue',xlab='CO2 Exchange')
+```
+verification de la distribution, absence d'outliers, normalite
+```{r}
+par(mfrow=c(2,3), mar = c(3, 3, 1, 1), cex.lab = 0.7, mgp = c(1.5, 0.5, 0))
+xlabel <- colnames(dataEnvironment)
+for(i in 1:ncol(dataEnvironment)){
+  dotchart(dataEnvironment[,i], xlab=xlabel[i], pch=20, col="blue", main=paste("Cleveland plot",xlabel[i]))
+  hist(dataEnvironment[,i], xlab=xlabel[i], pch=20, col="blue",main=paste("Distribution",xlabel[i]))
+  qqnorm(dataEnvironment[,i], xlab=xlabel[i], pch=20, col="blue")
+  qqline(dataEnvironment[,i], col="red")
+}
 ```
 
-
-```{r pressure, echo=FALSE}
+# 3. Verification de la colinearite entre Xi
+```{r, echo=FALSE}
 par(mfrow=c(1,1))
 M <- cor(dataEnvironment)
-corrplot(M, method = "number")
+corrplot.mixed(M,upper="square",lower.col="black", tl.col="black",cl.cex = 0.7,tl.cex = 0.6,number.cex =0.7)
 
-chart.Correlation(dataEnvironment,histogram=TRUE, pch=19)#usefull if few variables
 
+chart.Correlation(dataEnvironment,histogram=TRUE, pch=19)#associationfull if few variables
+
+```
+
+```{r, echo=FALSE}
+dataEnvironment_selected = subset(dataEnvironment, select = -c(Argile, Na_100g, Na_Liter))
+chart.Correlation(dataEnvironment_selected,histogram=TRUE, pch=19)#associationfull if few variables
+
+```
+
+Repartition des donnes dans l'espace
+```{r, echo=FALSE}
 str(dataCoord)
 plot(dataCoord)
 ```
 
-
-```{r pressure, echo=FALSE}
-dataEnvironment_selected = subset(dataEnvironment, select = -c(Argile, Na_100g, Na_Liter))
-chart.Correlation(dataEnvironment_selected,histogram=TRUE, pch=19)#usefull if few variables
-
-```
-
-
-```{r pressure, echo=FALSE}
-
-
-
-```
-
-
-
-II. RECHERCHE D'UNE AUTOCORRELATION SPATIALE
+## II. RECHERCHE D'UNE AUTOCORRELATION SPATIALE
 
 # Test de Mantel pour l'autocorrélation spatiale 
 
@@ -139,25 +130,20 @@ spatial <- dist(dataCoord) # Matrice spatiale
 
 ```
 
-
-
 ## Matrice du milieu
 Ensuite, nous importons les données sur l'environnement à partir du fichier `mil.txt` et préparons la matrice de distance en supprimant les colonnes corrélés (Argile, Na100g et Na+). Nous standardisons également les données en les divisant par l'écart-type.
-
 ```{r}
 # Calcul de la matrice de distance du milieu (standardisée)
-dataEnvironment_selected <- dist(scale(dataEnvironment_selected), method = "euclidean") # Matrice du milieu
+matriceMilieu <- dist(scale(dataEnvironment_selected), method = "euclidean") # Matrice du milieu
 
 ```
-
-
 
 ## Test de Mantel
 Nous effectuons maintenant le test de Mantel pour évaluer la corrélation entre les deux matrices.
 ```{r}
 # Test de Mantel
 library(ade4)
-R <- mantel.randtest(spatial, dataEnvironment_selected, nrepet = 1000)
+R <- mantel.randtest(spatial, matriceMilieu, nrepet = 1000)
 
 # Affichage des résultats
 R # p-value: 0.03896104, Observation: 0.07646109 
@@ -171,16 +157,10 @@ Les résultats du test de Mantel montrent une corrélation positive faible entre
 
 En conclusion, il existe une similitude entre les variables caractérisant le site de l'étude, expliquée par leur proximité géographique.
 
-Une autre manière de regarder l'autocorrelation spatiale est de faire un partitionnement de variance :
-```{r}
-m = varpart(dataFlower,dataEnvironment,dataCoord)
-m
-plot(m, bg=2:5)
-```
 
 ## III. DETERMINATION DES VARIABLES STRUCTURANT LES COMMUNAUTES AVEC UNE PCCA
+
 # 1. Standardisation 
-Pourquoi faut il standardiser ?? et scale les données env ??
 
 Certaines espèces sont très fréquentes sur certains sites (lorsque les conditions sont favorables), ou absentes de nombreux sites. Cette asymétrie peut introduire des problèmes parasites dans nos analyses. Ainsi nous allons transformer nos données de composition pour les analyser de manière appropriée.
 La transformation de Hellinger permet de réduire les effets des valeurs extrêmement grandes.
@@ -203,76 +183,92 @@ formule_pcca <- formula(paste("dataFlower ~",                              paste
 
 print(formule_pcca)
 
-pccaModel <- cca(formule_pcca, dataEnvironmentAndCoord)
+pccaModel <- cca(formule_pcca, dataEnvironmentAndCoordy,scan=F)
 
 ordistep(pccaModel,perm.max=500)
 ```
-3. Construction du modele finale
+
+# 3. Construction du modele finale
+
 Finalement, apres selection de variable il nous reste 6 variables environnementales : Sable, Mg, K, Conduc, Capa_Reten et Altitude. Le modele finale est donc le suivant :
 ```{r}
 formulePcca_finale = formula("dataFlower ~ Sable + Mg + K + Conduc + Capa_Reten + Altitude +
 Condition(x + y)")
-pccaModel_finale <- cca(formulePcca_finale, dataEnvironmentAndCoord)
+pccaModel_finale <- cca(formulePcca_finale, dataEnvironmentAndCoordy,scan=F)
 ```
 
-4. Significativite du modele
+# 4. Validite et significativite du modele
 
-vif
+Tout d'abord verifions que les variables retenues n'ont pas une correlation trop forte entre elles (ce qui doit etre le cas etant donne que cela a ete verifie lors de l'exploration des donnees)
 ```{r}
 vif.cca(pccaModel_finale) 
 ```
+Toutes les valuers de VIF < 10 => ok
 
-summary, anova pour tester la signicativité
+Regardons la part de variance expliquee par notre modele
 ```{r}
 pccaModel_finale
-RsquareAdj(pccaModel_finale)
-summary(pccaModel_finale)
-
-#test the pCCA:
-anova.cca(pccaModel_finale)
-# Species scores :
-pccaModel_finale$CCA$v
-
 ```
 
-5. Variables significatives dans le modele
+On verifie que la pCCA est bien significative
+```{r}
+anova.cca(pccaModel_finale)
+```
+
+Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 8.33, l'environnement en explique 11,6% et les donnees spatiales 8,8%
+
+Les 2 premiers axes representent 56,6% de la variance expliquee par l'environnement (independament de l'effet spatiale), et 6,6% de la variance totale.
+
+
+
+partitionnement de variance :
+```{r}
+m = varpart(dataFlower,dataEnvironment,dataCoord)
+m
+plot(m, bg=2:5)
+```
+
+5. Importance des variables dans le modele
+On peut aussi verifier la significativité de chaque variable environnementale du modele
 ```{r}
 anova(pccaModel_finale, by="terms", perms.max=1000)
 ```
+
 ```{r}
 pccaModel_finale$CCA$biplot
 ```
 
 6. Representation des resultats
 ```{r}
-plot(pccaModel_finale,scaling=1) # scaling for sites
-plot(pccaModel_finale,scaling=2) # scaling for species
+plot(pccaModel_finale,scaling=1) 
+plot(pccaModel_finale,scaling=2) 
 
 plot(pccaModel_finale, type="n", scaling =3)
 text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
 text(pccaModel_finale, "species", col="blue", cex=0.8)
 ```
 
+Ici la representation est refaite en colorant selon la communauté vegetale de chaque site (determine par un expert)
 ```{r}
 scl <- 2 
 colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
-Use = as.factor(unique(dasso$association))
-dataEnvironmentAndCoord$association <- as.factor(dasso$association)
-head(with(dataEnvironmentAndCoord, colvec[Use]))
 
+association = unique(dasso$association) %>%
+  as.factor()
+dataEnvironmentAndCoord$association <- as.factor(dasso$association)
+#head(with(dataEnvironmentAndCoord, colvec[association]))
+
+# Ajouter les axes sans les points :
 plot(pccaModel_finale, type = "n", scaling = scl)
+# Ajouter les fleches pour les variables environnementales :
 text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
-with(dataEnvironmentAndCoord, points(pccaModel_finale, display = "sites", col = colvec[Use],
-                      scaling = scl, pch = 21, bg = colvec[Use]))
+# Ajouter les points (1 point = 1 ligne = 1 site)
+with(dataEnvironmentAndCoord, points(pccaModel_finale, display = "sites", col = colvec[association],
+                      scaling = scl, pch = 21, bg = colvec[association]))
+# Ajout des especes : (ça fait charge)
 #text(pccaModel_finale, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
-with(dataEnvironmentAndCoord, legend("topright", legend = levels(Use), bty = "n",
+# Ajout d'une legende pour les couleurs :
+with(dataEnvironmentAndCoord, legend("topright", legend = levels(association), bty = "n",
                       col = colvec, pch = 21, pt.bg = colvec))
 ```
-
-
-
-
-
-
-
 
