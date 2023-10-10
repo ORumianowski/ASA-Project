@@ -1,5 +1,6 @@
 ---
-title: "Asa projet"
+title: "ASA - Les communautés végétales"
+author : "Abdourahmane Diallo, Antoine Quennevat, Odin Rumianowski, Louis Schroll"
 date: "2023-10-05"
 output :
   html_document :
@@ -9,7 +10,13 @@ output :
     message : no
     number_sections : yes
     code_fold : hide
+    style : simplex
 ---
+
+
+Ce travail porte sur l’analyse de relevés floristiques en lien avec les conditions physico-chimiques des sols. Les relevés ont été effectués sur 97 stations situées sur la plaine côtière d’Algérie. A chaque station, 11 variables environnementales ont été mesurées. L’objectif est de déterminer quelles sont ces variables environnementales structurant les communautés de plantes.
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
@@ -92,9 +99,13 @@ for (i in 1:ncol(data_environment)) {
   qqline(data_environment[,i],col='red')
 }
 ```
+
 On note 3 particularités dans la distribution de ces variables:
+
 - capa_reten possède 2 outliers. Puisqu'on ne connait pas la stratégie d'échantillonnage, on ne peut rien faire.
+
 - sable possède beaucoup de petites valeurs et quelques très hautes valeurs éloignant sa distribution d'une distribution normale. Centrer réduire la variable va atténuer cet effet.
+
 - altitude est semi quantitative, avec une répartition inégale de chacune des valeurs.
 
 
@@ -158,17 +169,20 @@ On constate une très grande proportion de 0 dans tableau, avec la plupart des e
 data_flower <- decostand(data_flower, "hellinger")
 ```
 
+
 ## Données spatiales
 Enfin, on va représenter les sites d'études
+
 ```{r Coordonnées}
 plot(data_coordinate)
 ```
+
+
+
+
 Les stations sont réparties de manière régulière dans l'espace.
 
-
-
-
-# RECHERCHE D'UNE AUTOCORRELATION SPATIALE: Test de Mantel
+# Recherche d'une autocorrelation spatiale: Test de Mantel
 
 Dans cette partie, nous allons effectuer un test de Mantel pour évaluer la corrélation entre deux matrices de distance : la matrice spatiale et la matrice de l'environnement.
 
@@ -187,7 +201,8 @@ matrice_spatial <- dist(data_coordinate) # Matrice spatiale
 
 
 ## Matrice du milieu
-En suite nous préparons la matrice de distance.  l'écart-type.
+En suite nous préparons la matrice de distance.  
+
 ```{r}
 # Calcul de la matrice de distance du milieu (standardisée)
 matrice_env<- dist(data_environment, method = "euclidean") # Matrice du milieu
@@ -208,7 +223,7 @@ plot(R, main = "Test de Mantel")
 
 ```
 
-Les résultats du test de Mantel montrent une corrélation positive faible (0.7) entre les deux matrices de distance.
+Les résultats du test de Mantel montrent une corrélation positive faible (0.07) entre les deux matrices de distance.
 
 ## Conclusion
 
@@ -216,10 +231,11 @@ En conclusion, il existe une similitude entre les variables caractérisant le si
 
 
 
+# Détermination des variables structurant les communautés : pCCA
 
-# DETERMINATION DES VARIABLES STRUCTURANT LES COMMUNAUTES AVEC UNE PCCA
+## Standardisation 
 
-## Standardisation ( dèja fait)
+(déjà réalisée)
 
 
 ## Selection des variables pertinententes avec ordistep
@@ -227,6 +243,8 @@ En conclusion, il existe une similitude entre les variables caractérisant le si
 ordistep permet de selectionner les variables a conserver dans le modele en se basant sur des tests de permutations. Les variables qui ne permettent pas une amelioration significative du modele sont ainsi retires.
 
 Dans le code ci-dessous, on construit tout d'abord la formule que le modele devra utiliser afin de specifier que les donnees spatiales doivent etre pris en compte dans le modele afin de retirer la part de variance explique par les variables environnementales qui serait liee a de l'autocorrelation spatiale.
+
+
 ```{r }
 data_environmentAndCoord = cbind(data_environment, data_coordinate)
 
@@ -239,29 +257,35 @@ pccaModel <- cca(formule_pcca, data_environmentAndCoord,scan=F)
 ordistep(pccaModel,perm.max=500)
 ```
 
-## Construction du modele finale
+
+## Construction du modèle final
+
 
 Finalement, apres selection de variable il nous reste 6 variables environnementales : Sable, Mg, K, Conduc, Capa_Reten et Altitude. Le modele finale est donc le suivant :
+
 ```{r}
 formulePcca_finale = formula("data_flower ~ Sable + Mg + K + Conduc + Capa_Reten + Altitude +
 Condition(x + y)")
 pccaModel_finale <- cca(formulePcca_finale, data_environmentAndCoord,scan=F)
 ```
 
-## Validite et significativite du modele
+## Validité et significativite du modele
 
 Tout d'abord verifions que les variables retenues n'ont pas une correlation trop forte entre elles (ce qui ne doit pas etre le cas etant donne que cela a ete verifie lors de l'exploration des donnees)
 ```{r}
 vif.cca(pccaModel_finale) 
 ```
-Toutes les valuers de VIF < 10 => ok
 
-Regardons la part de variance expliquee par notre modele
+Les variables dont la valeur de VIF est supérieure à 10 ne sont pas conservées. Dans le cas présent, aucune variable n'est sujette à une colinéalité trop importante.
+
+Regardons la part de variance expliquée par notre modèle
+
 ```{r}
 pccaModel_finale
 ```
 
 On verifie que la pCCA est bien significative
+
 ```{r}
 anova.cca(pccaModel_finale)
 ```
@@ -327,7 +351,7 @@ Le second axe est positivement lié avec la teneur en sable et négativement ave
 Comme l'altitude a une distribution particulière, semble quantitative, et semble avoir un rôle important dans les résultats alors qu'elle varie seulement entre 1 et 7m, nous avons décidé de refaire les analyses en l'excluant. 
 
 
-# SANS ALTITUDE
+# Analyse avec retrait de l'altitude
 
 Dans un premier temps, on garde l'Altitude.
 ```{r  Suppression de Altitude}
@@ -337,7 +361,7 @@ data_env_sans_alt <- data_environment %>%
 
 head(data_env_sans_alt)
 ```
-# Mantel
+## Mantel
 ```{r}
 # Calcul de la matrice de distance spatiale
 matrice_spatial <- dist(data_coordinate) # Matrice spatiale
@@ -353,14 +377,12 @@ R <- mantel.randtest(matrice_spatial, matrice_env_sans_alt, nrepet = 10000)
 R # p-value: 0.1418581, Observation: 0.04313656
 plot(R, main = "Test de Mantel")
 ```
+
 On observe que sans l'altitude le test de Mantel n'est plus significative. Nous poursuivrons tout de même l'analyse avec une pCCA, car au vu de l'échantillonnage on s'attend à de l'autocorrélation spatiale. Cela permettra aussi une meilleure comparaison avec le test avec altitude. 
 
-# DETERMINATION DES VARIABLES STRUCTURANT LES COMMUNAUTES AVEC UNE PCCA
+## Détermination des variables straucturants les communautés: pCCA
 
-## Standardisation ( dèja fait)
-
-
-## Selection des variables pertinententes avec ordistep
+### Selection des variables pertinententes avec ordistep
 
 ```{r }
 data_environmentAndCoord_sans_alt = cbind(data_env_sans_alt, data_coordinate)
@@ -373,9 +395,10 @@ pccaModel_sans_alt <- cca(formule_pcca_sans_alt, data_environmentAndCoord_sans_a
 
 ordistep(pccaModel_sans_alt,perm.max=500)
 ```
+
 On garde seulement 4 variables. On remarque en particulier que la variable Mg est retiré alors qu'elle était conservé dans l'analyse avec l'altitude.
 
-## Construction du modele finale
+### Construction du modele finale
 
 Finalement, apres selection de variable il nous reste 6 variables environnementales : Sable, Mg, K, Conduc, Capa_Reten et Altitude. Le modele finale est donc le suivant :
 ```{r}
@@ -384,7 +407,7 @@ Condition(x + y)")
 pcca_finale_sans_alt <- cca(formulePcca_finale_sans_alt, data_environmentAndCoord_sans_alt,scan=F)
 ```
 
-## Validite et significativite du modele
+### Validite et significativite du modele
 
 Tout d'abord verifions que les variables retenues n'ont pas une correlation trop forte entre elles (ce qui ne doit pas etre le cas etant donne que cela a ete verifie lors de l'exploration des donnees)
 ```{r}
@@ -408,7 +431,7 @@ Les 2 premiers axes representent 56,6% de la variance expliquee par l'environnem
 
 
 
-## Importance des variables dans le modele
+### Importance des variables dans le modele
 On peut aussi verifier la significativité de chaque variable environnementale du modele
 ```{r}
 anova(pcca_finale_sans_alt, by="terms", perms.max=1000)
@@ -418,7 +441,7 @@ anova(pcca_finale_sans_alt, by="terms", perms.max=1000)
 pcca_finale_sans_alt$CCA$biplot
 ```
 
-## Representation des resultats
+### Representation des resultats
 ```{r}
 plot(pcca_finale_sans_alt, type="n", scaling =3)
 text(pcca_finale_sans_alt, dis="cn",col="black",cex = 1.2)
@@ -449,6 +472,9 @@ with(data_environmentAndCoord_sans_alt, points(pcca_finale_sans_alt, display = "
 with(data_environmentAndCoord_sans_alt, legend("topright", legend = levels(association), bty = "n",
                       col = colvec, pch = 21, pt.bg = colvec))
 ```
+
+# Comparaison des résultats des deux analyses
+
 ```{r, echo=FALSE}
 scl <- 2 
 colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
