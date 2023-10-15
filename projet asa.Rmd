@@ -25,8 +25,7 @@ Il est fort probable qu'il y ai de la corrélation spatiale entre les différent
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
 ```
 
-
-### Chargement des packages necessaires et des donnees
+Chargement des packages necessaires et des donnees
 
 ```{r, warnings = FALSE, message=FALSE}
 rm(list=ls())
@@ -37,11 +36,6 @@ library(ggplot2)
 library(corrplot)
 library(PerformanceAnalytics)
 library(ade4)
-```
-
-
-
-```{r Chargement des données, echo=FALSE, warnings = FALSE, message=FALSE}
 
 Path = "data_vegetation_french.xls"
 
@@ -62,9 +56,12 @@ data_association <- read_xls(Path, sheet = "association")
 ```
 
 # Exploration des données
-## Structures 
+## Structures des tables de données
+
+On regarde d'abord le summary de chacune des tables pour avoir une idée des variables qu'elles contiennent et de leurs valeurs associées.
 
 ```{r}
+
 summary(data_association)
 summary(data_coordinate)
 summary(data_flower[, 1:3])
@@ -72,24 +69,26 @@ summary(data_environment)
 
 ```
 
-On vérifie s'il y a des NA dans le jeu de données
+
+On vérifie qu'il n'y ai pas de NA dans les jeux de données floristique et environnemental.
 
 ```{r}
 colSums(is.na(data_flower))
 colSums(is.na(data_environment))
 
 ```
-Ok, il n y a pas de NA dans les données environnement et floristique.
+
+Il n y a pas de NA dans les données.
 
 
-On vérifie s'il y a des stations qui ne présentent aucun individu.
+On vérifie ensuite que toutes les stations présentent des individus (car une station à 0 individu poserait problème pour la CCA et devrait être supprimée).
 
 ```{r}
 apply(data_flower, 1, sum)
 
 ```
 
-Ok, toutes les stations présentent des individus.
+Toutes les stations présentent entre 6 et 16 individus, elles peuvent donc toutes être conservées. 
 
 
 ## Distribution des variables environnementales
@@ -107,25 +106,29 @@ for (i in 1:ncol(data_environment)) {
 }
 ```
 
-On note 3 particularités dans la distribution de ces variables:
+On note **4 particularités** dans la distribution de ces variables:
 
-- capa_reten possède 2 outliers. Puisqu'on ne connait pas la stratégie d'échantillonnage, on ne peut rien faire.
+- *capa_reten* possède 2 outliers. Puisqu'on ne connait pas la stratégie d'échantillonnage, on ne peut pas les exclure.
 
-- sable possède beaucoup de petites valeurs et quelques très hautes valeurs éloignant sa distribution d'une distribution normale. Centrer réduire la variable va atténuer cet effet.
+- les valeurs des variables varient sur des échelles très différentes. Il faudra donc centrer et réduire les données afin de procéder aux analyses.
 
-- altitude est semi quantitative, avec une répartition inégale de chacune des valeurs.
+- la plupart des distributions s'écartent de la normale avec de nombreuses valeurs faibles et seulement quelques vameurs plus élevées. Cela est particulièrement vrai pour *sable*. Centrer et réduire devrait permettre de se rapprocher d'une distribution normale, qui fait partie des hypothèses à respecter lors d'une CCA.  
+
+- *altitude* est semi quantitative, avec une répartition inégale de chacune des valeurs.
 
 
 
 ## Corrélation des variables environnementales
 
-On regarde la matrice de corrélation des variables environnementales (en considerant l'Altitude comme une variable quantitatif).
+On regarde la matrice de corrélation des variables environnementales (en considerant l'Altitude comme une variable quantitatives).
 
 ```{r Correlations, warnings = FALSE, message=FALSE}
 #matrice de corrélation des variables environnementales 
 chart.Correlation(data_environment)
 ```
-En considerant l'Altitude comme une variable qualitatif.
+
+En considérant l'Altitude comme une variable qualitative.
+
 ```{r  Correlation avec Altitude comme facteur}
 
 boxplot(data_environment$Conduc~as.factor(data_environment$Altitude),
@@ -135,9 +138,9 @@ boxplot(data_environment$Conduc~as.factor(data_environment$Altitude),
 ```
 
 
-On décide de retirer les variables dont les coefficients de correlation sont supérieurs à **0.7**.
+On décide de retirer les variables dont les coefficients de correlation 2 à 2 sont supérieurs à **0.7**.
 
-A partir de ce seuil, on constate que la variable sable est corrélée négativement à l'**argile**, On retire donc argile. De plus, NA100g est corrélée positivement à NA+ et conduc, qui sont toutes deux également corrélées positivement. On décide de retirer **NA100g** et **NA+** du jeu de données environnemental.
+A partir de ce seuil, on constate que la variable sable est corrélée négativement à l'**argile**. On retire donc argile. De plus, NA100g est corrélée positivement à NA+ et conduc, qui sont toutes deux également corrélées positivement. On décide de retirer **NA100g** et **NA+** du jeu de données environnemental.
 
 
 
@@ -148,8 +151,7 @@ data_environment <- data_environment[,-c(1,6,10)]
 ```
 
 
-Nous avons décidé de faire deux analyses statistiques avec et sans la variable **Altitude**.
-Dans un premier temps, on garde l'Altitude.
+Malgré sa distribution particulière, nous décidons dans un premier temps de garder Altitude parmi les variables explicatives. 
 
 
 ## Standarization
@@ -165,11 +167,13 @@ data_environment <- scale(data_environment,center = T, scale = T)
 ## Données floristiques
 
 On s'intéresse maintenant à la distribution des espèces par station
+
 ```{r Distribution des spèces}
-barplot(table(as.vector(unlist(as.vector(data_flower)))), xlab = "Abondance", ylab = "Fréquence", col = "blue")
-hist(apply(data_flower, 1, sum),col='blue', main="", xlab = "Total de plantes par station")
-hist(apply(data_flower, 2, sum),col='blue', main="", xlab = "Nombre d'individus d'une même espèce (toute station confondue)")
+barplot(table(as.vector(unlist(as.vector(data_flower)))), xlab = "Nombre de plantes d'une espèce comptées par station", ylab = "Fréquence", col = "blue", main="Répartition des nombres de comptages par espèce et par station")
+hist(apply(data_flower, 1, sum),col='blue', xlab = "Nombre total de plantes par station", main="Distribution du nombre de plantes par station")
+hist(apply(data_flower, 2, sum),col='blue',  xlab = "Nombre d'individus par espèce (toute station confondue)", main="Distribution du nombre de plantes par espèces", breaks=15)
 ```
+
 On constate une très grande proportion de 0 dans tableau, avec la plupart des espèces peu présentes sur l'ensemble des stations (entre 0 et 20 individus), mais une espèce présente (plus de 120 individus). On va donc opérer une transformation de Hellinger sur les données floristiques.
 
 ```{r Standarization des données floristiques}
@@ -181,8 +185,9 @@ data_flower <- decostand(data_flower, "hellinger")
 Enfin, on va représenter les sites d'études
 
 ```{r Coordonnées}
-plot(data_coordinate)
+plot(data_coordinate, main="Carte des stations d'échantillonnage", pch=16)
 ```
+
 Les stations sont réparties de manière régulière dans l'espace.
 
 
@@ -211,7 +216,7 @@ En suite nous préparons la matrice de distance.
 
 ```{r}
 # Calcul de la matrice de distance du milieu (standardisée)
-matrice_env<- dist(data_environment, method = "euclidean") # Matrice du milieu
+matrice_env <- dist(data_environment, method = "euclidean") # Matrice du milieu
 
 ```
 
@@ -229,10 +234,7 @@ plot(R, main = "Test de Mantel")
 
 ```
 
-Les résultats du test de Mantel montrent une corrélation positive faible entre les deux matrices de distance.
-
-## Conclusion
-
+Les résultats du test de Mantel montrent une corrélation positive faible (~0.076) mais significative (p-value~0.035) entre les deux matrices de distance.
 En conclusion, il existe une similitude entre les variables caractérisant le site de l'étude, expliquée par leur proximité géographique.
 
 
@@ -241,14 +243,14 @@ En conclusion, il existe une similitude entre les variables caractérisant le si
 
 ## Standardisation 
 
-(déjà réalisée)
+Avant de faire une pCCA, il faut s'assurer que les données ont bien été standardiser, ce qui a été fait dans la partie exploration des données.
 
 
 ## Selection des variables pertinententes avec ordistep
 
-ordistep permet de selectionner les variables a conserver dans le modele en se basant sur des tests de permutations. Les variables qui ne permettent pas une amelioration significative du modele sont ainsi retires.
+ordistep permet de selectionner les variables à conserver dans le modèle en se basant sur des tests de permutations. Les variables qui ne permettent pas une amélioration significative du modèle sont ainsi retirées.
 
-Dans le code ci-dessous, on construit tout d'abord la formule que le modele devra utiliser afin de specifier que les donnees spatiales doivent etre pris en compte dans le modele afin de retirer la part de variance explique par les variables environnementales qui serait liee a de l'autocorrelation spatiale.
+Dans le code ci-dessous, on construit tout d'abord la formule que le modèle devra utiliser afin de specifier que les données spatiales doivent etre pris en compte dans le modele afin de retirer la part de variance explique par les variables environnementales qui serait liee a de l'autocorrelation spatiale.
 
 
 ```{r }
@@ -270,8 +272,7 @@ ordistep(pccaModel,perm.max=500)
 Finalement, après selection de variable il nous reste 6 variables environnementales : Sable, Mg, K, Conduc, Capa_Reten et Altitude. Le modele finale est donc le suivant :
 
 ```{r}
-formulePcca_finale = formula("data_flower ~ Sable + Mg + K + Conduc + Capa_Reten + Altitude +
-Condition(x + y)")
+formulePcca_finale = formula("data_flower ~ Sable + Mg + K + Conduc + Capa_Reten + Altitude + Condition(x + y)")
 pccaModel_finale <- cca(formulePcca_finale, data_environmentAndCoord,scan=F)
 ```
 
@@ -287,35 +288,43 @@ Les variables dont la valeur de VIF est supérieure à 10 ne sont pas conservée
 Regardons la part de variance expliquée par notre modèle
 
 ```{r}
+
 pccaModel_finale
 
 ```
 
-On verifie que la pCCA est bien significative
+On verifie que la pCCA est significative avec annova.cca
 
 ```{r}
 anova.cca(pccaModel_finale)
 ```
 
-Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 7.97, l'environnement en explique **11,6%** et les donnees spatiales **8,8%**.
+Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 8.33, l'environnement en explique **11,6%** et les donnees spatiales **8,8%**.
 
-Les 2 premiers axes representent **56,6%** de la variance expliquee par l'environnement (independament de l'effet spatiale), et **6,6%** de la variance totale.
+Les 2 premiers axes representent **56,6%** de la variance expliquée par l'environnement (indépendament de l'effet spatiale), et **6,6%** de la variance totale.
 
 
 
 ## Importance des variables dans le modele
+
 On peut aussi verifier la significativité de chaque variable environnementale du modele
+
 ```{r}
 anova(pccaModel_finale, by="terms", perms.max=1000)
 ```
+
+On voit que toutes les variables restantes dans le modèle ont un effet significatif.
+
+On peut aussi regarder la contribution à chaque axe de chaque variable environnementale :
 
 ```{r}
 pccaModel_finale$CCA$biplot
 ```
 
 ## Representation des resultats
+
 ```{r}
-plot(pccaModel_finale, type="n", scaling =3)
+plot(pccaModel_finale, type="n", scaling =3, main="Résultat de la pCCA avec les espèces")
 text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
 text(pccaModel_finale, "species", col="blue", cex=0.8)
 ```
@@ -333,7 +342,7 @@ data_environmentAndCoord$association <- as.factor(data_association$association)
 #head(with(data_environmentAndCoord, colvec[association]))
 
 # Ajouter les axes sans les points :
-plot(pccaModel_finale, type = "n", scaling = scl)
+plot(pccaModel_finale, type = "n", scaling = scl, main="Résultat de la pCCA pour les stations")
 # Ajouter les fleches pour les variables environnementales :
 text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
 # Ajouter les points (1 point = 1 ligne = 1 site)
@@ -346,7 +355,7 @@ with(data_environmentAndCoord, legend("topright", legend = levels(association), 
                       col = colvec, pch = 21, pt.bg = colvec))
 ```
 
-Les variables structurant la communauté sont donc : l'altitude, la teneur en sable, la concentration en magnésium Mg, la capacité de rétention du sol, la conductivité du sol et la concentration en potassium. Comme l'argile, la concentration en sodium Na+/L et la teneur?? en mg de Na+/mg était corrélés à la teneur en sable et à la conductivité respectivement, ces 3 variables sont aussi à considérer comme strucutrant la communauté. En ajoutant les communautés sur le graphique, cela permet de bien se rendre compte que ces variables strucutrent les communautés. 
+Les variables structurant la communauté sont donc : l'altitude, la teneur en sable, la concentration en magnésium Mg, la capacité de rétention du sol, la conductivité du sol et la concentration en potassium. Comme l'argile, la concentration en sodium Na+/L et la teneur en mg de Na+/mg était corrélés à la teneur en sable et à la conductivité respectivement, ces 3 variables sont aussi à considérer comme strucutrant la communauté. En ajoutant les communautés sur le graphique, cela permet de bien se rendre compte que ces variables strucutrent les communautés. 
 
 Une interprétation possible des axes: 
 
@@ -358,8 +367,9 @@ Le second axe est positivement lié avec la teneur en sable et négativement ave
 Comme l'altitude a une distribution particulière, semble quantitative, et semble avoir un rôle important dans les résultats alors qu'elle varie seulement entre 1 et 7m, nous avons décidé de refaire les analyses en l'excluant. 
 
 
-# Analyse avec retrait de l'altitude
+# Analyse en retirant l'altitude
 
+D'abord, on supprime l'altitude du tableau environnement. 
 
 ```{r  Suppression de Altitude}
 data_env_sans_alt <- data_environment %>%
@@ -368,7 +378,9 @@ data_env_sans_alt <- data_environment %>%
 
 head(data_env_sans_alt)
 ```
+
 ## Mantel
+
 ```{r}
 # Calcul de la matrice de distance spatiale
 matrice_spatial <- dist(data_coordinate) # Matrice spatiale
@@ -385,7 +397,7 @@ R # p-value: 0.1418581, Observation: 0.04313656
 plot(R, main = "Test de Mantel")
 ```
 
-On observe que sans l'altitude le test de Mantel n'est plus significatif. Nous poursuivrons tout de même l'analyse avec une pCCA, car au vu de l'échantillonnage on s'attend à de l'autocorrélation spatiale. Cela permettra aussi une meilleure comparaison avec l'analyse précendent (avec altitude). 
+On observe que sans l'altitude le test de Mantel n'est plus significatif (p-value~0.056). Nous poursuivrons tout de même l'analyse avec une pCCA, car la p-value est très proche de la significativité et au vu de l'échantillonnage on s'attend à de l'autocorrélation spatiale. Cela permettra aussi une meilleure comparaison avec l'analyse précendent (avec altitude). 
 
 ## Détermination des variables straucturants les communautés: pCCA
 
@@ -417,9 +429,11 @@ pcca_finale_sans_alt <- cca(formulePcca_finale_sans_alt, data_environmentAndCoor
 ### Validite et significativite du modele
 
 Tout d'abord verifions que les variables retenues n'ont pas une correlation trop forte entre elles (ce qui ne doit pas etre le cas etant donne que cela a ete verifie lors de l'exploration des donnees)
+
 ```{r}
 vif.cca(pcca_finale_sans_alt) 
 ```
+
 Toutes les valuers de VIF sont < 10 => ok
 
 Regardons la part de variance expliquee par notre modele
@@ -430,30 +444,28 @@ eig= c(0.24441, 0.16549, 0.12212, 0.10341 )
 ```
 
 On verifie que la pCCA est bien significative
+
 ```{r}
 anova.cca(pcca_finale_sans_alt)
 ```
 
-Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 7.97, l'environnement en explique **7,9%** et les donnees spatiales **8,8%**.
+Dans cette 2e analyse, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 8.33, l'environnement en explique **7,8%** et les donnees spatiales **8,8%**.
 
 
-Les 2 premiers axes representent **64,6%** de la variance expliquée par l'environnement (independament de l'effet spatiale), et **XX%** de la variance totale.
-
+Les 2 premiers axes representent **64,6%** de la variance expliquée par l'environnement (independament de l'effet spatiale). 
 
 
 ### Importance des variables dans le modele
+
 On peut aussi vérifier la significativité de chaque variable environnementale du modele
+
 ```{r}
 anova(pcca_finale_sans_alt, by="terms", perms.max=1000)
 ```
 
-```{r}
-pcca_finale_sans_alt$CCA$biplot
-```
-
 ### Representation des resultats
 ```{r}
-plot(pcca_finale_sans_alt, type="n", scaling =3)
+plot(pcca_finale_sans_alt, type="n", scaling =3, main="Résultat de la pCCA pour les espèces")
 text(pcca_finale_sans_alt, dis="cn",col="black",cex = 1.2)
 text(pcca_finale_sans_alt, "species", col="blue", cex=0.8)
 ```
@@ -461,17 +473,20 @@ text(pcca_finale_sans_alt, "species", col="blue", cex=0.8)
 
 
 Ici la representation est refaite en colorant selon la communauté vegetale de chaque site. (determine par un expert), qui sont contenue dans les **données associations**.
-```{r}
+
+
+
+
+```{r, echo=FALSE}
 scl <- 2 
 colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
 
 association = unique(data_association$association) %>%
   as.factor()
 data_environmentAndCoord_sans_alt$association <- as.factor(data_association$association)
-#head(with(data_environmentAndCoord_sans_alt, colvec[association]))
 
 # Ajouter les axes sans les points :
-plot(pcca_finale_sans_alt, type = "n", scaling = scl)
+plot(pcca_finale_sans_alt, type = "n", scaling = scl, main="Résultat de la pCCA sans Altitude")
 # Ajouter les fleches pour les variables environnementales :
 text(pcca_finale_sans_alt, dis="cn",col="black",cex = 1.2)
 # Ajouter les points (1 point = 1 ligne = 1 site)
@@ -481,10 +496,8 @@ with(data_environmentAndCoord_sans_alt, points(pcca_finale_sans_alt, display = "
 # Ajout d'une legende pour les couleurs :
 with(data_environmentAndCoord_sans_alt, legend("topright", legend = levels(association), bty = "n",
                       col = colvec, pch = 21, pt.bg = colvec))
+
 ```
-
-# Comparaison des résultats des deux analyses
-
 
 ```{r, echo=FALSE}
 association = unique(data_association$association) %>%
@@ -492,7 +505,7 @@ association = unique(data_association$association) %>%
 data_environmentAndCoord$association <- as.factor(data_association$association)
 
 # Ajouter les axes sans les points :
-plot(pccaModel_finale, type = "n", scaling = scl, main="Cas1: Avec Altitude")
+plot(pccaModel_finale, type = "n", scaling = scl, main="Résulat de la pCCA avec Altitude")
 # Ajouter les fleches pour les variables environnementales :
 text(pccaModel_finale, dis="cn",col="black",cex = 1.2)
 # Ajouter les points (1 point = 1 ligne = 1 site)
@@ -506,29 +519,8 @@ with(data_environmentAndCoord, legend("topright", legend = levels(association), 
 ```
 
 
-```{r, echo=FALSE}
-scl <- 2 
-colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
 
-association = unique(data_association$association) %>%
-  as.factor()
-data_environmentAndCoord_sans_alt$association <- as.factor(data_association$association)
-
-# Ajouter les axes sans les points :
-plot(pcca_finale_sans_alt, type = "n", scaling = scl, main="Cas2: Sans Altitude")
-# Ajouter les fleches pour les variables environnementales :
-text(pcca_finale_sans_alt, dis="cn",col="black",cex = 1.2)
-# Ajouter les points (1 point = 1 ligne = 1 site)
-with(data_environmentAndCoord_sans_alt, points(pcca_finale_sans_alt, display = "sites", col = colvec[association],
-                      scaling = scl, pch = 21, bg = colvec[association]))
-# Ajout des especes : (ça fait charge)
-# Ajout d'une legende pour les couleurs :
-with(data_environmentAndCoord_sans_alt, legend("topright", legend = levels(association), bty = "n",
-                      col = colvec, pch = 21, pt.bg = colvec))
-
-```
-
-**On constate que la variable Altitude à une grande importance pour structuré la comminauté des espèces végétale **.
+**On constate que la variable Altitude a une grande importance pour structurer la communauté des espèces végétale **. 
 
 
 
