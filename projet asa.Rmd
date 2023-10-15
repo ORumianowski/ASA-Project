@@ -17,7 +17,7 @@ library("ggplot2")
 library(corrplot)
 library(PerformanceAnalytics) 
 
-filePathLouis = "C:/git/ASA-Project/data_vegetation_french.xls"
+filePathLouis = "data_vegetation_french.xls"
 # filePath = "C:/associationrs/33763/Desktop/MODE/ASA - Advanced statictics/Projet/data_vegetation_french.xls"
 dataFlower <- read_xls(filePathLouis, sheet = "flo")
 
