@@ -331,7 +331,8 @@ text(pccaModel_finale, "species", col="blue", cex=0.8)
 
 
 
-Ici la representation est refaite en colorant selon la communauté vegetale de chaque site. (determine par un expert), qui sont contenue dans les **données associations**.
+La representation est refaite avec en montrant les sites et en les colorant selon la communauté vegetale de chaque site (determinée par un expert), qui sont contenue dans les **données associations**.
+
 ```{r}
 scl <- 2 
 colvec <- c("darkred", "darkblue", "darkgreen","darkorange","darkmagenta","darkcyan","darkgrey")
@@ -472,10 +473,6 @@ text(pcca_finale_sans_alt, "species", col="blue", cex=0.8)
 
 
 
-Ici la representation est refaite en colorant selon la communauté vegetale de chaque site. (determine par un expert), qui sont contenue dans les **données associations**.
-
-
-
 
 ```{r, echo=FALSE}
 scl <- 2 
@@ -519,8 +516,9 @@ with(data_environmentAndCoord, legend("topright", legend = levels(association), 
 ```
 
 
-
-**On constate que la variable Altitude a une grande importance pour structurer la communauté des espèces végétale **. 
+Si l'on compare les résultats obtenus dans chaque cas, on voit que le choix d'inclure ou non l'altitude parmi les variables explicatives a un impact fort sur les résultats. Or, comme nous l'avons vu l'altitude varie seulement entre 1 et 7m. Pour expliquer une telle importance d'une variable variant peu, il faut probablement se pencher sur un effet confondant. Par exemple, l'altitude pourrait être corrélées avec la distance à la côte. Dans cette situation, n'ayant pas collecté les données, il est difficile pour nous de conclure à un effet confondant. 
+De plus, la précision de l'altitude est faible, elle est mesuré au mètre près alors que son échelle de variation est aussi le mètre. Cela fait que la variable pourrait aussi bien être considérer qualitative. 
+Ces différents problèmes avec l'altitude devrait nous pousser à la prudence et donc nous faire choisir l'analyse sans cette variable plutôt que avec. 
 
 
 
