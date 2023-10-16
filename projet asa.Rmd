@@ -292,9 +292,29 @@ Les variables dont la valeur de VIF est supérieure à 10 ne sont pas conservée
 Regardons la part de variance expliquée par notre modèle
 
 ```{r}
-
 pccaModel_finale
 
+inertie_total = pccaModel_finale$tot.chi
+inertie_conditionnelle = pccaModel_finale$pCCA$tot.chi
+
+eigenvalue = pccaModel_finale$CCA$eig
+inertie_contrainte = sum(eigenvalue)
+
+print("% de la variance expliquée par les variables environnementales")
+pourcentage_env = inertie_contrainte / inertie_total *100
+pourcentage_env
+
+print("% de la variance expliquée par les variables spatiales")
+pourcentage_spatiale = inertie_conditionnelle / inertie_total *100
+pourcentage_spatiale
+
+print("% de la variance expliqué par l'environnement contenu dans les 2 premiers axes")
+pourcentage_axe1_2_env = ((eigenvalue[[1]] + eigenvalue[[2]]) / sum(eigenvalue)) * 100
+pourcentage_axe1_2_env
+
+print("% de l'inertie totale contenue dans les 2 premiers axes")
+pourcentage_axe1_2_tot = ((eigenvalue[[1]] + eigenvalue[[2]]) / inertie_total) * 100
+pourcentage_axe1_2_tot
 ```
 
 On verifie que la pCCA est significative avec annova.cca
@@ -303,9 +323,9 @@ On verifie que la pCCA est significative avec annova.cca
 anova.cca(pccaModel_finale)
 ```
 
-Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est 8.33, l'environnement en explique **11,6%** et les donnees spatiales **8,8%**.
+Finalement, les resultats de la pCCA sont significatifs (p=0,001). L'inertie totale de l'analyse est **`r inertie_total`**, l'environnement en explique **11,6%** et les donnees spatiales **8,8%**.
 
-Les 2 premiers axes representent **56,6%** de la variance expliquée par l'environnement (indépendament de l'effet spatiale), et **6,6%** de la variance totale.
+Les 2 premiers axes representent **56,6%** de la variance expliquée par l'environnement (indépendament de l'effet spatiale), et **6,53%** de la variance totale.
 
 
 
@@ -443,9 +463,29 @@ Toutes les valuers de VIF sont < 10 => ok
 
 Regardons la part de variance expliquee par notre modele
 ```{r}
-pcca_finale_sans_alt
-eig= c(0.24441, 0.16549, 0.12212, 0.10341 )
-(0.24441 +0.16549)/sum(eig)
+#pcca_finale_sans_alt
+
+inertie_total2 = pcca_finale_sans_alt$tot.chi
+inertie_conditionnelle2 = pcca_finale_sans_alt$pCCA$tot.chi
+
+eigenvalue2 = pcca_finale_sans_alt$CCA$eig
+inertie_contrainte2 = sum(eigenvalue2)
+
+print("% de la variance expliquée par les variables environnementales")
+pourcentage_env_sans_alt2 = inertie_contrainte2 / inertie_total2 *100
+pourcentage_env_sans_alt2
+
+print("% de la variance expliquée par les variables spatiales")
+pourcentage_spatiale2 = inertie_conditionnelle2 / inertie_total2 *100
+pourcentage_spatiale2
+
+print("% de la variance expliqué par l'environnement contenu dans les 2 premiers axes")
+pourcentage_axe1_2_env2 = ((eigenvalue2[[1]] + eigenvalue2[[2]]) / sum(eigenvalue2)) * 100
+pourcentage_axe1_2_env2
+
+print("% de l'inertie totale contenue dans les 2 premiers axes")
+pourcentage_axe1_2_tot2 = ((eigenvalue2[[1]] + eigenvalue2[[2]]) / inertie_total2) * 100
+pourcentage_axe1_2_tot2
 ```
 
 On verifie que la pCCA est bien significative
