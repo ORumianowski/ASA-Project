@@ -276,6 +276,8 @@ formulePcca_finale = formula("data_flower ~ Sable + Mg + K + Conduc + Capa_Reten
 pccaModel_finale <- cca(formulePcca_finale, data_environmentAndCoord,scan=F)
 ```
 
+L'ajout simple de variables redondantes augmente artificiellement le pourcentage de variance expliquée. Un grand nombre d'observations par rapport au nombre de variables est nécessaire. Il est généralement admis qu’il faut 10 fois plus de données que de variables explicatives. Dans notre cas, nous avons 6 variables explicatives et 97 stations. Notre modèle respecte cette contrainte.
+
 ## Validité et significativite du modele
 
 Tout d'abord verifions que les variables retenues n'ont pas une correlation trop forte entre elles.
