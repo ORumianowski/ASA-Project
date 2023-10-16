@@ -447,7 +447,7 @@ pccaModel_sans_alt <- cca(formule_pcca_sans_alt, data_environmentAndCoord_sans_a
 ordistep(pccaModel_sans_alt,perm.max=500)
 ```
 
-On garde seulement 4 variables. On remarque que la variable Mg est retirée alors qu'elle était conservée dans l'analyse avec l'altitude.
+En effectuant la fonction ordistep plusieurs fois, nous avons remarqué que la variable Mg est parfois conservée, parfois retirée. Etant donné que le nombre d'observations est largement suffisant par rapport aux nombres de variables (97 observations pour 4 ou 5 variables), nous avons décidé de garder la variable Mg. Nous avons priviligié un critère écologique/biologique à un critère statistique (non discriminant).
 
 ### Construction du modèle finale
 
