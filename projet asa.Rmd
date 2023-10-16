@@ -11,6 +11,8 @@ output :
     number_sections : yes
     code_fold : hide
     style : simplex
+    theme: cosmo
+    highlight: pygment
 ---
 
 
@@ -22,7 +24,7 @@ Il est fort probable qu'il y ai de la corrélation spatiale entre les différent
 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message = FALSE, cash=TRUE)
 ```
 
 Chargement des packages necessaires et des donnees
